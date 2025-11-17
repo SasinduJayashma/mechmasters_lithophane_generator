@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 export type GreyscaleMethod = 'averaging' | 'luminance' | 'blackwhite';
+export type PreviewQuality = 'lousy' | 'low' | 'medium' | 'high' | 'native';
 
 export interface ImageSettings {
   brightness: number;
@@ -46,6 +47,13 @@ export interface ModelOptions {
   zoomFactor: number;
 }
 
+export interface QualitySettings {
+  mmPerPixel: number;
+  previewQuality: PreviewQuality;
+  curaFix: boolean;
+  autoUpdate: boolean;
+}
+
 interface AppState {
   // Navigation
   currentPage: 'upload' | 'edit' | 'model';
@@ -69,6 +77,9 @@ interface AppState {
 
   modelOptions: ModelOptions;
   updateModelOptions: (options: Partial<ModelOptions>) => void;
+
+  qualitySettings: QualitySettings;
+  updateQualitySettings: (settings: Partial<QualitySettings>) => void;
 
   // Actions
   reset: () => void;
@@ -115,6 +126,13 @@ const initialModelOptions: ModelOptions = {
   zoomFactor: 100,
 };
 
+const initialQualitySettings: QualitySettings = {
+  mmPerPixel: 0.1,
+  previewQuality: 'medium',
+  curaFix: false,
+  autoUpdate: true,
+};
+
 export const useStore = create<AppState>((set) => ({
   currentPage: 'upload',
   setCurrentPage: (page) => set({ currentPage: page }),
@@ -148,6 +166,12 @@ export const useStore = create<AppState>((set) => ({
       modelOptions: { ...state.modelOptions, ...options },
     })),
 
+  qualitySettings: initialQualitySettings,
+  updateQualitySettings: (settings) =>
+    set((state) => ({
+      qualitySettings: { ...state.qualitySettings, ...settings },
+    })),
+
   reset: () =>
     set({
       currentPage: 'upload',
@@ -157,5 +181,6 @@ export const useStore = create<AppState>((set) => ({
       greyscaleSettings: initialGreyscaleSettings,
       cylinderParams: initialCylinderParams,
       modelOptions: initialModelOptions,
+      qualitySettings: initialQualitySettings,
     }),
 }));

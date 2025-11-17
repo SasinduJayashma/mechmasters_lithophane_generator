@@ -40,7 +40,8 @@ function calculateNormal(v1: Vector3, v2: Vector3, v3: Vector3): Vector3 {
 export function generateCylinderLithophane(
   imageData: ImageData,
   params: CylinderParams,
-  options: ModelOptions
+  options: ModelOptions,
+  mmPerPixel: number = 0.1
 ): string {
   const { width, height, data } = imageData;
   const triangles: Triangle[] = [];
@@ -51,9 +52,10 @@ export function generateCylinderLithophane(
   const cylinderHeight = params.height;
   const angleRad = (params.angle * Math.PI) / 180;
 
-  // Resolution - use image dimensions
-  const segmentsW = Math.min(width, 500); // Limit for performance
-  const segmentsH = Math.min(height, 500);
+  // Calculate segments based on mm per pixel setting
+  const circumference = Math.PI * params.diameter * (params.angle / 360);
+  const segmentsW = Math.floor(circumference / mmPerPixel);
+  const segmentsH = Math.floor(params.height / mmPerPixel);
 
   // Create vertex grid
   const vertices: Vector3[][] = [];
