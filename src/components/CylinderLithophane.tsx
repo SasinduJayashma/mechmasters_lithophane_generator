@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CylinderParams, ModelOptions, PreviewQuality } from '../store';
 import { calculateSegments } from '../utils/qualityCalculations';
+import { smoothThicknessValues } from '../utils/smoothing';
 
 interface Props {
   imageData: ImageData;
@@ -10,9 +11,10 @@ interface Props {
   options: ModelOptions;
   mmPerPixel: number;
   previewQuality: PreviewQuality;
+  smoothing: number;
 }
 
-export function CylinderLithophane({ imageData, params, options, mmPerPixel, previewQuality }: Props) {
+export function CylinderLithophane({ imageData, params, options, mmPerPixel, previewQuality, smoothing }: Props) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Rotate the mesh slowly
@@ -43,15 +45,14 @@ export function CylinderLithophane({ imageData, params, options, mmPerPixel, pre
     const indices: number[] = [];
     const uvs: number[] = [];
 
-    // Create vertices
+    // Step 1: Build thickness grid from image data
+    const thicknessGrid: number[][] = [];
     for (let row = 0; row <= segmentsH; row++) {
+      thicknessGrid[row] = [];
       const v = row / segmentsH;
-      const y = cylinderHeight * v - cylinderHeight / 2;
-      const radius = radiusBottom + (radiusTop - radiusBottom) * v;
 
       for (let col = 0; col <= segmentsW; col++) {
         const u = col / segmentsW;
-        const angle = angleRad * u;
 
         // Sample image
         const imgX = Math.floor(u * (width - 1));
@@ -68,6 +69,25 @@ export function CylinderLithophane({ imageData, params, options, mmPerPixel, pre
 
         // Map greyscale to thickness
         const thickness = params.minThick + greyValue * (params.maxThick - params.minThick);
+        thicknessGrid[row][col] = thickness;
+      }
+    }
+
+    // Step 2: Apply smoothing to reduce spikes
+    const smoothedGrid = smoothThicknessValues(thicknessGrid, smoothing);
+
+    // Step 3: Create vertices using smoothed thickness values
+    for (let row = 0; row <= segmentsH; row++) {
+      const v = row / segmentsH;
+      const y = cylinderHeight * v - cylinderHeight / 2;
+      const radius = radiusBottom + (radiusTop - radiusBottom) * v;
+
+      for (let col = 0; col <= segmentsW; col++) {
+        const u = col / segmentsW;
+        const angle = angleRad * u;
+
+        // Use smoothed thickness value
+        const thickness = smoothedGrid[row][col];
 
         // Calculate position
         const x = (radius + thickness) * Math.cos(angle);
@@ -97,7 +117,7 @@ export function CylinderLithophane({ imageData, params, options, mmPerPixel, pre
     geometry.computeVertexNormals();
 
     return geometry;
-  }, [imageData, params, options, mmPerPixel, previewQuality]);
+  }, [imageData, params, options, mmPerPixel, previewQuality, smoothing]);
 
   // Create texture from image data
   const texture = useMemo(() => {

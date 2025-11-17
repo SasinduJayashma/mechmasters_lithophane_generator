@@ -1,4 +1,5 @@
 import { CylinderParams, ModelOptions } from '../store';
+import { smoothThicknessValues } from './smoothing';
 
 interface Vector3 {
   x: number;
@@ -41,7 +42,8 @@ export function generateCylinderLithophane(
   imageData: ImageData,
   params: CylinderParams,
   options: ModelOptions,
-  mmPerPixel: number = 0.1
+  mmPerPixel: number = 0.1,
+  smoothing: number = 1
 ): string {
   const { width, height, data } = imageData;
   const triangles: Triangle[] = [];
@@ -57,18 +59,14 @@ export function generateCylinderLithophane(
   const segmentsW = Math.floor(circumference / mmPerPixel);
   const segmentsH = Math.floor(params.height / mmPerPixel);
 
-  // Create vertex grid
-  const vertices: Vector3[][] = [];
-
+  // Step 1: Build thickness grid from image data
+  const thicknessGrid: number[][] = [];
   for (let row = 0; row <= segmentsH; row++) {
-    vertices[row] = [];
+    thicknessGrid[row] = [];
     const v = row / segmentsH;
-    const y = cylinderHeight * v - cylinderHeight / 2;
-    const radius = radiusBottom + (radiusTop - radiusBottom) * v;
 
     for (let col = 0; col <= segmentsW; col++) {
       const u = col / segmentsW;
-      const angle = angleRad * u;
 
       // Sample image
       const imgX = Math.floor(u * (width - 1));
@@ -85,6 +83,27 @@ export function generateCylinderLithophane(
 
       // Map greyscale to thickness (darker = thinner, lighter = thicker)
       const thickness = params.minThick + greyValue * (params.maxThick - params.minThick);
+      thicknessGrid[row][col] = thickness;
+    }
+  }
+
+  // Step 2: Apply smoothing to reduce spikes
+  const smoothedGrid = smoothThicknessValues(thicknessGrid, smoothing);
+
+  // Step 3: Create vertex grid using smoothed thickness values
+  const vertices: Vector3[][] = [];
+  for (let row = 0; row <= segmentsH; row++) {
+    vertices[row] = [];
+    const v = row / segmentsH;
+    const y = cylinderHeight * v - cylinderHeight / 2;
+    const radius = radiusBottom + (radiusTop - radiusBottom) * v;
+
+    for (let col = 0; col <= segmentsW; col++) {
+      const u = col / segmentsW;
+      const angle = angleRad * u;
+
+      // Use smoothed thickness value
+      const thickness = smoothedGrid[row][col];
 
       // Calculate position
       const x = (radius + thickness) * Math.cos(angle);

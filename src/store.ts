@@ -52,6 +52,7 @@ export interface QualitySettings {
   previewQuality: PreviewQuality;
   curaFix: boolean;
   autoUpdate: boolean;
+  smoothing: number; // 0 = no smoothing, higher values = more smoothing
 }
 
 interface AppState {
@@ -131,6 +132,7 @@ const initialQualitySettings: QualitySettings = {
   previewQuality: 'medium',
   curaFix: false,
   autoUpdate: true,
+  smoothing: 1, // Default: light smoothing to prevent spikes
 };
 
 export const useStore = create<AppState>((set) => ({

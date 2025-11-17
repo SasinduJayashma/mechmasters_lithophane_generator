@@ -39,7 +39,8 @@ export function ModelPage() {
         processedImageData,
         cylinderParams,
         modelOptions,
-        qualitySettings.mmPerPixel
+        qualitySettings.mmPerPixel,
+        qualitySettings.smoothing
       );
       downloadSTL(stl, 'lithophane.stl');
     } finally {
@@ -103,6 +104,7 @@ export function ModelPage() {
                   options={modelOptions}
                   mmPerPixel={qualitySettings.mmPerPixel}
                   previewQuality={qualitySettings.previewQuality}
+                  smoothing={qualitySettings.smoothing}
                 />
               </Canvas>
             </div>
@@ -193,6 +195,27 @@ export function ModelPage() {
                     }
                     className="w-5 h-5"
                   />
+                </div>
+
+                {/* Smoothing */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Surface Smoothing: {qualitySettings.smoothing}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="5"
+                    step="1"
+                    value={qualitySettings.smoothing}
+                    onChange={(e) =>
+                      updateQualitySettings({ smoothing: parseFloat(e.target.value) })
+                    }
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Reduces spikes and makes 3D printing easier (0 = no smoothing, 5 = maximum)
+                  </p>
                 </div>
 
                 {/* Auto Update */}
