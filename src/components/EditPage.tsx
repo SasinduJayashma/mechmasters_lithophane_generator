@@ -73,14 +73,14 @@ export function EditPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-gray-950">
       {/* Header */}
-      <div className="bg-white shadow-md px-6 py-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Edit Image</h1>
+      <div className="bg-gray-800 shadow-md px-6 py-4 flex items-center justify-between border-b border-gray-700">
+        <h1 className="text-2xl font-bold text-white">Edit Image</h1>
         <div className="flex gap-3">
           <button
             onClick={handleBack}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
           >
             ← Back to Upload
           </button>
@@ -96,17 +96,17 @@ export function EditPage() {
       {/* Main Content: Sidebar + Preview */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Scrollable Settings (1/3 width) */}
-        <div className="w-1/3 bg-white border-r border-gray-200 overflow-y-auto">
+        <div className="w-1/3 bg-gray-900 border-r border-gray-700 overflow-y-auto">
           <div className="p-6 space-y-6">
             {/* Greyscaling */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+              <h2 className="text-lg font-semibold text-white mb-4 pb-2 border-b border-gray-700">
                 Greyscaling
               </h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Method
                   </label>
                   <select
@@ -116,7 +116,7 @@ export function EditPage() {
                         method: e.target.value as 'averaging' | 'luminance' | 'blackwhite',
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-600 text-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="averaging">Averaging</option>
                     <option value="luminance">Luminance</option>
@@ -127,8 +127,8 @@ export function EditPage() {
                 {/* Averaging Method */}
                 {greyscaleSettings.method === 'averaging' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Background Intensity: <span className="text-blue-600 font-semibold">{greyscaleSettings.bgIntensity.toFixed(2)}</span>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Background Intensity: <span className="text-blue-400 font-semibold">{greyscaleSettings.bgIntensity.toFixed(2)}</span>
                     </label>
                     <input
                       type="range"
@@ -141,7 +141,7 @@ export function EditPage() {
                       }
                       className="w-full"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-400 mt-1">
                       Controls the grey-scale of the background
                     </p>
                   </div>
@@ -151,8 +151,8 @@ export function EditPage() {
                 {greyscaleSettings.method === 'luminance' && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Red: <span className="text-blue-600 font-semibold">{greyscaleSettings.redSlider.toFixed(3)}</span>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Red: <span className="text-blue-400 font-semibold">{greyscaleSettings.redSlider.toFixed(3)}</span>
                       </label>
                       <input
                         type="range"
@@ -168,8 +168,8 @@ export function EditPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Green: <span className="text-blue-600 font-semibold">{greyscaleSettings.greenSlider.toFixed(3)}</span>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Green: <span className="text-blue-400 font-semibold">{greyscaleSettings.greenSlider.toFixed(3)}</span>
                       </label>
                       <input
                         type="range"
@@ -185,8 +185,8 @@ export function EditPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Blue: <span className="text-blue-600 font-semibold">{greyscaleSettings.blueSlider.toFixed(3)}</span>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Blue: <span className="text-blue-400 font-semibold">{greyscaleSettings.blueSlider.toFixed(3)}</span>
                       </label>
                       <input
                         type="range"
@@ -202,8 +202,8 @@ export function EditPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Background Intensity: <span className="text-blue-600 font-semibold">{greyscaleSettings.bgIntensity.toFixed(2)}</span>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Background Intensity: <span className="text-blue-400 font-semibold">{greyscaleSettings.bgIntensity.toFixed(2)}</span>
                       </label>
                       <input
                         type="range"
@@ -224,8 +224,8 @@ export function EditPage() {
                 {greyscaleSettings.method === 'blackwhite' && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Threshold: <span className="text-blue-600 font-semibold">{greyscaleSettings.threshold.toFixed(2)}</span>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Threshold: <span className="text-blue-400 font-semibold">{greyscaleSettings.threshold.toFixed(2)}</span>
                       </label>
                       <input
                         type="range"
@@ -241,8 +241,8 @@ export function EditPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Black Factor: <span className="text-blue-600 font-semibold">{greyscaleSettings.blackFactor.toFixed(2)}</span>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Black Factor: <span className="text-blue-400 font-semibold">{greyscaleSettings.blackFactor.toFixed(2)}</span>
                       </label>
                       <input
                         type="range"
@@ -258,8 +258,8 @@ export function EditPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        White Factor: <span className="text-blue-600 font-semibold">{greyscaleSettings.whiteFactor.toFixed(2)}</span>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        White Factor: <span className="text-blue-400 font-semibold">{greyscaleSettings.whiteFactor.toFixed(2)}</span>
                       </label>
                       <input
                         type="range"
@@ -275,8 +275,8 @@ export function EditPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Background Intensity: <span className="text-blue-600 font-semibold">{greyscaleSettings.bgIntensity.toFixed(2)}</span>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Background Intensity: <span className="text-blue-400 font-semibold">{greyscaleSettings.bgIntensity.toFixed(2)}</span>
                       </label>
                       <input
                         type="range"
@@ -297,14 +297,14 @@ export function EditPage() {
 
             {/* Image Adjustments */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+              <h2 className="text-lg font-semibold text-white mb-4 pb-2 border-b border-gray-700">
                 Image Adjustments
               </h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Brightness: <span className="text-blue-600 font-semibold">{imageSettings.brightness}</span>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Brightness: <span className="text-blue-400 font-semibold">{imageSettings.brightness}</span>
                   </label>
                   <input
                     type="range"
@@ -317,14 +317,14 @@ export function EditPage() {
                     }
                     className="w-full"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     Controls the brightness of the image
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contrast: <span className="text-blue-600 font-semibold">{imageSettings.contrast}</span>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Contrast: <span className="text-blue-400 font-semibold">{imageSettings.contrast}</span>
                   </label>
                   <input
                     type="range"
@@ -337,14 +337,14 @@ export function EditPage() {
                     }
                     className="w-full"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     Increasing the contrast may enhance your image
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Exposure: <span className="text-blue-600 font-semibold">{imageSettings.exposure}</span>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Exposure: <span className="text-blue-400 font-semibold">{imageSettings.exposure}</span>
                   </label>
                   <input
                     type="range"
@@ -357,14 +357,14 @@ export function EditPage() {
                     }
                     className="w-full"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     Controls the exposure of the image
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Blur: <span className="text-blue-600 font-semibold">{imageSettings.blur}</span>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Blur: <span className="text-blue-400 font-semibold">{imageSettings.blur}</span>
                   </label>
                   <input
                     type="range"
@@ -377,7 +377,7 @@ export function EditPage() {
                     }
                     className="w-full"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     Blur radius in pixels
                   </p>
                 </div>

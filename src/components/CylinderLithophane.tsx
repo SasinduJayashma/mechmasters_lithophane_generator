@@ -16,13 +16,9 @@ interface Props {
 
 export function CylinderLithophane({ imageData, params, options, mmPerPixel, previewQuality, smoothing }: Props) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const innerCylinderRef = useRef<THREE.Mesh>(null);
 
-  // Rotate the mesh slowly
-  useFrame(() => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += 0.005;
-    }
-  });
+  // Removed auto-rotation - user can manually rotate with mouse
 
   const geometry = useMemo(() => {
     const { width, height, data } = imageData;
@@ -132,15 +128,83 @@ export function CylinderLithophane({ imageData, params, options, mmPerPixel, pre
     return texture;
   }, [imageData]);
 
+  // Create inner cylinder geometry (flat wall)
+  const innerGeometry = useMemo(() => {
+    const radiusBottom = params.diameterBottom / 2;
+    const radiusTop = params.diameterTop / 2;
+    const cylinderHeight = params.height;
+    const angleRad = (params.angle * Math.PI) / 180;
+
+    const { segmentsW, segmentsH } = calculateSegments(
+      params,
+      mmPerPixel,
+      previewQuality
+    );
+
+    const geometry = new THREE.BufferGeometry();
+    const vertices: number[] = [];
+    const indices: number[] = [];
+
+    // Create vertices for inner cylinder (smooth, no texture variation)
+    for (let row = 0; row <= segmentsH; row++) {
+      const v = row / segmentsH;
+      const y = cylinderHeight * v - cylinderHeight / 2;
+      const radius = radiusBottom + (radiusTop - radiusBottom) * v;
+
+      for (let col = 0; col <= segmentsW; col++) {
+        const u = col / segmentsW;
+        const angle = angleRad * u;
+
+        const x = radius * Math.cos(angle);
+        const z = radius * Math.sin(angle);
+
+        vertices.push(x, y, z);
+      }
+    }
+
+    // Create faces (same topology as outer surface)
+    for (let row = 0; row < segmentsH; row++) {
+      for (let col = 0; col < segmentsW; col++) {
+        const a = row * (segmentsW + 1) + col;
+        const b = row * (segmentsW + 1) + col + 1;
+        const c = (row + 1) * (segmentsW + 1) + col + 1;
+        const d = (row + 1) * (segmentsW + 1) + col;
+
+        // Reverse winding order for inner surface
+        indices.push(a, c, b);
+        indices.push(a, d, c);
+      }
+    }
+
+    geometry.setIndex(indices);
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.computeVertexNormals();
+
+    return geometry;
+  }, [params, mmPerPixel, previewQuality]);
+
   return (
-    <mesh ref={meshRef} geometry={geometry}>
-      <meshStandardMaterial
-        map={texture}
-        color={options.materialColor}
-        side={THREE.DoubleSide}
-        roughness={0.8}
-        metalness={0.1}
-      />
-    </mesh>
+    <>
+      {/* Outer textured surface */}
+      <mesh ref={meshRef} geometry={geometry}>
+        <meshStandardMaterial
+          map={texture}
+          color={options.materialColor}
+          side={THREE.FrontSide}
+          roughness={0.8}
+          metalness={0.1}
+        />
+      </mesh>
+
+      {/* Inner flat wall */}
+      <mesh ref={innerCylinderRef} geometry={innerGeometry}>
+        <meshStandardMaterial
+          color={options.materialColor}
+          side={THREE.FrontSide}
+          roughness={0.8}
+          metalness={0.1}
+        />
+      </mesh>
+    </>
   );
 }

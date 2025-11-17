@@ -53,13 +53,13 @@ export function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-700">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+          <h1 className="text-4xl font-bold text-white mb-2">
             Lithophane Generator
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-300">
             Upload your image to create a stunning 3D lithophane
           </p>
         </div>
@@ -67,10 +67,10 @@ export function UploadPage() {
         <div
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          className="border-4 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-blue-500 transition-colors cursor-pointer bg-gray-50"
+          className="border-4 border-dashed border-gray-600 rounded-xl p-12 text-center hover:border-blue-500 transition-colors cursor-pointer bg-gray-900"
         >
           <svg
-            className="mx-auto h-16 w-16 text-gray-400 mb-4"
+            className="mx-auto h-16 w-16 text-gray-500 mb-4"
             stroke="currentColor"
             fill="none"
             viewBox="0 0 48 48"
@@ -101,15 +101,15 @@ export function UploadPage() {
             />
           </div>
 
-          <p className="text-sm text-gray-500">or drag and drop your image here</p>
-          <p className="text-xs text-gray-400 mt-2">PNG, JPG, GIF up to 10MB</p>
+          <p className="text-sm text-gray-400">or drag and drop your image here</p>
+          <p className="text-xs text-gray-500 mt-2">PNG, JPG, GIF up to 10MB</p>
         </div>
 
-        <div className="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <div className="mt-8 bg-blue-900 border-l-4 border-blue-500 p-4 rounded border border-blue-700">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-blue-500"
+                className="h-5 w-5 text-blue-400"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -121,7 +121,7 @@ export function UploadPage() {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-gray-300">
                 For best results, use high-resolution images with good contrast.
                 The recommended size is around 2874px × 1425px.
               </p>

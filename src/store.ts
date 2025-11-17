@@ -3,6 +3,33 @@ import { create } from 'zustand';
 export type GreyscaleMethod = 'averaging' | 'luminance' | 'blackwhite';
 export type PreviewQuality = 'lousy' | 'low' | 'medium' | 'high' | 'native';
 
+// LocalStorage helpers
+const STORAGE_KEY = 'lithophane-settings';
+
+function loadFromStorage<T>(key: string, defaultValue: T): T {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed[key] !== undefined ? parsed[key] : defaultValue;
+    }
+  } catch (error) {
+    console.warn('Failed to load settings from localStorage:', error);
+  }
+  return defaultValue;
+}
+
+function saveToStorage(key: string, value: any) {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const data = stored ? JSON.parse(stored) : {};
+    data[key] = value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn('Failed to save settings to localStorage:', error);
+  }
+}
+
 export interface ImageSettings {
   brightness: number;
   contrast: number;
@@ -32,6 +59,8 @@ export interface CylinderParams {
   angle: number;
   minThick: number;
   maxThick: number;
+  hasTopCover: boolean;
+  hasBottomCover: boolean;
 }
 
 export interface ModelOptions {
@@ -86,14 +115,14 @@ interface AppState {
   reset: () => void;
 }
 
-const initialImageSettings: ImageSettings = {
+const defaultImageSettings: ImageSettings = {
   brightness: 0,
   contrast: 0,
   exposure: 0,
   blur: 0,
 };
 
-const initialGreyscaleSettings: GreyscaleSettings = {
+const defaultGreyscaleSettings: GreyscaleSettings = {
   method: 'luminance',
   bgIntensity: 0.5,
   redSlider: 0.299,
@@ -104,7 +133,7 @@ const initialGreyscaleSettings: GreyscaleSettings = {
   whiteFactor: 0.5,
 };
 
-const initialCylinderParams: CylinderParams = {
+const defaultCylinderParams: CylinderParams = {
   diameter: 74.2,
   diameterTop: 74.2,
   diameterBottom: 74.2,
@@ -112,9 +141,11 @@ const initialCylinderParams: CylinderParams = {
   angle: 360,
   minThick: 0.5,
   maxThick: 2.8,
+  hasTopCover: true,
+  hasBottomCover: true,
 };
 
-const initialModelOptions: ModelOptions = {
+const defaultModelOptions: ModelOptions = {
   backLighted: true,
   lightColor: '#ffffff',
   lightIntensity: 95,
@@ -127,13 +158,20 @@ const initialModelOptions: ModelOptions = {
   zoomFactor: 100,
 };
 
-const initialQualitySettings: QualitySettings = {
+const defaultQualitySettings: QualitySettings = {
   mmPerPixel: 0.1,
   previewQuality: 'medium',
   curaFix: false,
   autoUpdate: true,
-  smoothing: 1, // Default: light smoothing to prevent spikes
+  smoothing: 1,
 };
+
+// Load initial values from localStorage or use defaults
+const initialImageSettings = loadFromStorage('imageSettings', defaultImageSettings);
+const initialGreyscaleSettings = loadFromStorage('greyscaleSettings', defaultGreyscaleSettings);
+const initialCylinderParams = loadFromStorage('cylinderParams', defaultCylinderParams);
+const initialModelOptions = loadFromStorage('modelOptions', defaultModelOptions);
+const initialQualitySettings = loadFromStorage('qualitySettings', defaultQualitySettings);
 
 export const useStore = create<AppState>((set) => ({
   currentPage: 'upload',
@@ -146,43 +184,57 @@ export const useStore = create<AppState>((set) => ({
 
   imageSettings: initialImageSettings,
   updateImageSettings: (settings) =>
-    set((state) => ({
-      imageSettings: { ...state.imageSettings, ...settings },
-    })),
+    set((state) => {
+      const newSettings = { ...state.imageSettings, ...settings };
+      saveToStorage('imageSettings', newSettings);
+      return { imageSettings: newSettings };
+    }),
 
   greyscaleSettings: initialGreyscaleSettings,
   updateGreyscaleSettings: (settings) =>
-    set((state) => ({
-      greyscaleSettings: { ...state.greyscaleSettings, ...settings },
-    })),
+    set((state) => {
+      const newSettings = { ...state.greyscaleSettings, ...settings };
+      saveToStorage('greyscaleSettings', newSettings);
+      return { greyscaleSettings: newSettings };
+    }),
 
   cylinderParams: initialCylinderParams,
   updateCylinderParams: (params) =>
-    set((state) => ({
-      cylinderParams: { ...state.cylinderParams, ...params },
-    })),
+    set((state) => {
+      const newParams = { ...state.cylinderParams, ...params };
+      saveToStorage('cylinderParams', newParams);
+      return { cylinderParams: newParams };
+    }),
 
   modelOptions: initialModelOptions,
   updateModelOptions: (options) =>
-    set((state) => ({
-      modelOptions: { ...state.modelOptions, ...options },
-    })),
+    set((state) => {
+      const newOptions = { ...state.modelOptions, ...options };
+      saveToStorage('modelOptions', newOptions);
+      return { modelOptions: newOptions };
+    }),
 
   qualitySettings: initialQualitySettings,
   updateQualitySettings: (settings) =>
-    set((state) => ({
-      qualitySettings: { ...state.qualitySettings, ...settings },
-    })),
+    set((state) => {
+      const newSettings = { ...state.qualitySettings, ...settings };
+      saveToStorage('qualitySettings', newSettings);
+      return { qualitySettings: newSettings };
+    }),
 
-  reset: () =>
+  reset: () => {
+    // Clear localStorage
+    localStorage.removeItem(STORAGE_KEY);
+    // Reset to defaults
     set({
       currentPage: 'upload',
       originalImage: null,
       processedImageData: null,
-      imageSettings: initialImageSettings,
-      greyscaleSettings: initialGreyscaleSettings,
-      cylinderParams: initialCylinderParams,
-      modelOptions: initialModelOptions,
-      qualitySettings: initialQualitySettings,
-    }),
+      imageSettings: defaultImageSettings,
+      greyscaleSettings: defaultGreyscaleSettings,
+      cylinderParams: defaultCylinderParams,
+      modelOptions: defaultModelOptions,
+      qualitySettings: defaultQualitySettings,
+    });
+  },
 }));
