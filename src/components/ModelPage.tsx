@@ -53,82 +53,48 @@ export function ModelPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-gray-800">3D Model Preview</h1>
-            <div className="flex gap-2">
-              <button
-                onClick={handleBack}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleGenerateSTL}
-                disabled={isGenerating}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-gray-400"
-              >
-                {isGenerating ? 'Generating...' : 'Download STL'}
-              </button>
-            </div>
-          </div>
+    <div className="h-screen flex flex-col bg-gray-100">
+      {/* Header */}
+      <div className="bg-white shadow-md px-6 py-4 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-800">3D Model Preview</h1>
+        <div className="flex gap-3">
+          <button
+            onClick={handleBack}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+          >
+            ← Back to Edit
+          </button>
+          <button
+            onClick={handleGenerateSTL}
+            disabled={isGenerating}
+            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {isGenerating ? '⏳ Generating...' : '⬇ Download STL'}
+          </button>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* 3D Preview */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">3D Preview</h2>
-            <div className="bg-gray-900 rounded-lg overflow-hidden" style={{ height: '600px' }}>
-              <Canvas>
-                <PerspectiveCamera makeDefault position={[0, 0, 200]} />
-                <OrbitControls enableDamping />
-
-                {/* Lighting */}
-                <ambientLight intensity={0.3} />
-                {modelOptions.backLighted && (
-                  <pointLight
-                    position={[0, 0, 0]}
-                    intensity={modelOptions.lightIntensity / 100}
-                    color={modelOptions.lightColor}
-                  />
-                )}
-                <directionalLight position={[10, 10, 5]} intensity={0.5} />
-                <directionalLight position={[-10, -10, -5]} intensity={0.3} />
-
-                {/* Lithophane */}
-                <CylinderLithophane
-                  imageData={processedImageData}
-                  params={cylinderParams}
-                  options={modelOptions}
-                  mmPerPixel={qualitySettings.mmPerPixel}
-                  previewQuality={qualitySettings.previewQuality}
-                  smoothing={qualitySettings.smoothing}
-                />
-              </Canvas>
-            </div>
-            <p className="text-sm text-gray-500 mt-2">
-              Use mouse to rotate, zoom, and pan the model
-            </p>
-          </div>
-
-          {/* Controls */}
-          <div className="space-y-4">
+      {/* Main Content: Sidebar + Viewer */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - Scrollable Settings (1/3 width) */}
+        <div className="w-1/3 bg-white border-r border-gray-200 overflow-y-auto">
+          <div className="p-6 space-y-6">
             {/* Quality Options */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Quality Options</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                Quality Options
+              </h2>
 
               <div className="space-y-4">
                 {/* File Size Estimate */}
-                <div className="p-3 bg-gray-100 rounded-lg">
-                  <p className="text-sm font-medium text-gray-700">Estimated file size:</p>
-                  <p className={`text-2xl font-bold ${estimatedFileSizeMB > 480 ? 'text-red-600' : 'text-green-600'}`}>
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-medium text-gray-700 mb-1">Estimated File Size</p>
+                  <p className={`text-3xl font-bold ${estimatedFileSizeMB > 480 ? 'text-red-600' : 'text-green-600'}`}>
                     {estimatedFileSizeMB.toFixed(0)} MB
                   </p>
                   {estimatedFileSizeMB > 480 && (
-                    <p className="text-xs text-red-600 mt-1">
-                      Warning: File size exceeds 480 MB. Cura may not be able to slice this file.
+                    <p className="text-xs text-red-600 mt-2">
+                      ⚠️ File exceeds 480 MB. Cura may not slice it.
                     </p>
                   )}
                 </div>
@@ -136,7 +102,7 @@ export function ModelPage() {
                 {/* mm per pixel */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    mm per pixel: {qualitySettings.mmPerPixel.toFixed(2)} mm
+                    mm per pixel: <span className="text-blue-600 font-semibold">{qualitySettings.mmPerPixel.toFixed(2)} mm</span>
                   </label>
                   <input
                     type="range"
@@ -150,7 +116,7 @@ export function ModelPage() {
                     className="w-full"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Lower values = higher quality but larger file size
+                    Lower = higher quality but larger file size
                   </p>
                 </div>
 
@@ -173,12 +139,33 @@ export function ModelPage() {
                     <option value="native">{getPreviewQualityLabel('native')}</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    Preview quality affects 3D viewer performance only
+                    Affects 3D viewer performance only
+                  </p>
+                </div>
+
+                {/* Smoothing */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Surface Smoothing: <span className="text-blue-600 font-semibold">{qualitySettings.smoothing}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="5"
+                    step="1"
+                    value={qualitySettings.smoothing}
+                    onChange={(e) =>
+                      updateQualitySettings({ smoothing: parseFloat(e.target.value) })
+                    }
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Reduces spikes for easier printing (0 = none, 5 = max)
                   </p>
                 </div>
 
                 {/* Cura Fix */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <label className="text-sm font-medium text-gray-700">
                       Cura Fix
@@ -197,35 +184,14 @@ export function ModelPage() {
                   />
                 </div>
 
-                {/* Smoothing */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Surface Smoothing: {qualitySettings.smoothing}
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="5"
-                    step="1"
-                    value={qualitySettings.smoothing}
-                    onChange={(e) =>
-                      updateQualitySettings({ smoothing: parseFloat(e.target.value) })
-                    }
-                    className="w-full"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Reduces spikes and makes 3D printing easier (0 = no smoothing, 5 = maximum)
-                  </p>
-                </div>
-
                 {/* Auto Update */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <label className="text-sm font-medium text-gray-700">
                       Auto Update
                     </label>
                     <p className="text-xs text-gray-500">
-                      Automatically update preview on changes
+                      Update preview on changes
                     </p>
                   </div>
                   <input
@@ -241,13 +207,15 @@ export function ModelPage() {
             </div>
 
             {/* Cylinder Parameters */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Cylinder Parameters</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                Cylinder Parameters
+              </h2>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Diameter: {cylinderParams.diameter.toFixed(1)} mm
+                    Diameter: <span className="text-blue-600 font-semibold">{cylinderParams.diameter.toFixed(1)} mm</span>
                   </label>
                   <input
                     type="range"
@@ -269,7 +237,7 @@ export function ModelPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Diameter Top: {cylinderParams.diameterTop.toFixed(1)} mm
+                    Diameter Top: <span className="text-blue-600 font-semibold">{cylinderParams.diameterTop.toFixed(1)} mm</span>
                   </label>
                   <input
                     type="range"
@@ -286,7 +254,7 @@ export function ModelPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Diameter Bottom: {cylinderParams.diameterBottom.toFixed(1)} mm
+                    Diameter Bottom: <span className="text-blue-600 font-semibold">{cylinderParams.diameterBottom.toFixed(1)} mm</span>
                   </label>
                   <input
                     type="range"
@@ -303,7 +271,7 @@ export function ModelPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Height: {cylinderParams.height.toFixed(1)} mm
+                    Height: <span className="text-blue-600 font-semibold">{cylinderParams.height.toFixed(1)} mm</span>
                   </label>
                   <input
                     type="range"
@@ -320,7 +288,7 @@ export function ModelPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Angle: {cylinderParams.angle.toFixed(0)}°
+                    Angle: <span className="text-blue-600 font-semibold">{cylinderParams.angle.toFixed(0)}°</span>
                   </label>
                   <input
                     type="range"
@@ -337,7 +305,7 @@ export function ModelPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Min Thickness: {cylinderParams.minThick.toFixed(1)} mm
+                    Min Thickness: <span className="text-blue-600 font-semibold">{cylinderParams.minThick.toFixed(1)} mm</span>
                   </label>
                   <input
                     type="range"
@@ -354,7 +322,7 @@ export function ModelPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Thickness: {cylinderParams.maxThick.toFixed(1)} mm
+                    Max Thickness: <span className="text-blue-600 font-semibold">{cylinderParams.maxThick.toFixed(1)} mm</span>
                   </label>
                   <input
                     type="range"
@@ -379,11 +347,13 @@ export function ModelPage() {
             </div>
 
             {/* Model Options */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Model Options</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                Model Options
+              </h2>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <label className="text-sm font-medium text-gray-700">
                     Back Lighted
                   </label>
@@ -415,7 +385,7 @@ export function ModelPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Light Intensity: {modelOptions.lightIntensity}%
+                        Light Intensity: <span className="text-blue-600 font-semibold">{modelOptions.lightIntensity}%</span>
                       </label>
                       <input
                         type="range"
@@ -446,7 +416,7 @@ export function ModelPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <label className="text-sm font-medium text-gray-700">
                     Positive Image
                   </label>
@@ -460,7 +430,7 @@ export function ModelPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <label className="text-sm font-medium text-gray-700">
                     Flip Image
                   </label>
@@ -474,7 +444,7 @@ export function ModelPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <label className="text-sm font-medium text-gray-700">
                     Mirror Image
                   </label>
@@ -490,7 +460,7 @@ export function ModelPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Placement Horizontal: {modelOptions.placementHorizontal}%
+                    Placement Horizontal: <span className="text-blue-600 font-semibold">{modelOptions.placementHorizontal}%</span>
                   </label>
                   <input
                     type="range"
@@ -507,7 +477,7 @@ export function ModelPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Placement Vertical: {modelOptions.placementVertical}%
+                    Placement Vertical: <span className="text-blue-600 font-semibold">{modelOptions.placementVertical}%</span>
                   </label>
                   <input
                     type="range"
@@ -524,7 +494,7 @@ export function ModelPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Zoom Factor: {modelOptions.zoomFactor}%
+                    Zoom Factor: <span className="text-blue-600 font-semibold">{modelOptions.zoomFactor}%</span>
                   </label>
                   <input
                     type="range"
@@ -540,6 +510,43 @@ export function ModelPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Right Viewer - Fixed 3D Preview (2/3 width) */}
+        <div className="flex-1 bg-gray-900 relative">
+          <Canvas>
+            <PerspectiveCamera makeDefault position={[0, 0, 200]} />
+            <OrbitControls enableDamping />
+
+            {/* Lighting */}
+            <ambientLight intensity={0.3} />
+            {modelOptions.backLighted && (
+              <pointLight
+                position={[0, 0, 0]}
+                intensity={modelOptions.lightIntensity / 100}
+                color={modelOptions.lightColor}
+              />
+            )}
+            <directionalLight position={[10, 10, 5]} intensity={0.5} />
+            <directionalLight position={[-10, -10, -5]} intensity={0.3} />
+
+            {/* Lithophane */}
+            <CylinderLithophane
+              imageData={processedImageData}
+              params={cylinderParams}
+              options={modelOptions}
+              mmPerPixel={qualitySettings.mmPerPixel}
+              previewQuality={qualitySettings.previewQuality}
+              smoothing={qualitySettings.smoothing}
+            />
+          </Canvas>
+
+          {/* Help Text Overlay */}
+          <div className="absolute bottom-4 left-4 bg-black bg-opacity-60 text-white text-sm px-4 py-2 rounded-lg">
+            <p>🖱️ Left Click + Drag to Rotate</p>
+            <p>🖱️ Right Click + Drag to Pan</p>
+            <p>🖱️ Scroll to Zoom</p>
           </div>
         </div>
       </div>

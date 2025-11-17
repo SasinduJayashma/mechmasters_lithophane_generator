@@ -73,249 +73,238 @@ export function EditPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-gray-800">Edit Image</h1>
-            <div className="flex gap-2">
-              <button
-                onClick={handleBack}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleNext}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Next: Generate Model
-              </button>
-            </div>
-          </div>
+    <div className="h-screen flex flex-col bg-gray-100">
+      {/* Header */}
+      <div className="bg-white shadow-md px-6 py-4 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-800">Edit Image</h1>
+        <div className="flex gap-3">
+          <button
+            onClick={handleBack}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+          >
+            ← Back to Upload
+          </button>
+          <button
+            onClick={handleNext}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Next: Generate Model →
+          </button>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Preview */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Preview</h2>
-            <div className="relative bg-gray-100 rounded-lg overflow-hidden">
-              {isProcessing && (
-                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-                  <div className="text-white">Processing...</div>
-                </div>
-              )}
-              <canvas
-                ref={canvasRef}
-                className="w-full h-auto"
-                style={{ maxHeight: '600px', objectFit: 'contain' }}
-              />
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="space-y-4">
+      {/* Main Content: Sidebar + Preview */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - Scrollable Settings (1/3 width) */}
+        <div className="w-1/3 bg-white border-r border-gray-200 overflow-y-auto">
+          <div className="p-6 space-y-6">
             {/* Greyscaling */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Greyscaling</h2>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Method
-                </label>
-                <select
-                  value={greyscaleSettings.method}
-                  onChange={(e) =>
-                    updateGreyscaleSettings({
-                      method: e.target.value as 'averaging' | 'luminance' | 'blackwhite',
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="averaging">Averaging</option>
-                  <option value="luminance">Luminance</option>
-                  <option value="blackwhite">Black & White</option>
-                </select>
-              </div>
-
-              {/* Averaging Method */}
-              {greyscaleSettings.method === 'averaging' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Background Intensity: {greyscaleSettings.bgIntensity.toFixed(2)}
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={greyscaleSettings.bgIntensity}
-                    onChange={(e) =>
-                      updateGreyscaleSettings({ bgIntensity: parseFloat(e.target.value) })
-                    }
-                    className="w-full"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Controls the grey-scale of the background
-                  </p>
-                </div>
-              )}
-
-              {/* Luminance Method */}
-              {greyscaleSettings.method === 'luminance' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Red: {greyscaleSettings.redSlider.toFixed(3)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.001"
-                      value={greyscaleSettings.redSlider}
-                      onChange={(e) =>
-                        updateGreyscaleSettings({ redSlider: parseFloat(e.target.value) })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Green: {greyscaleSettings.greenSlider.toFixed(3)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.001"
-                      value={greyscaleSettings.greenSlider}
-                      onChange={(e) =>
-                        updateGreyscaleSettings({ greenSlider: parseFloat(e.target.value) })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Blue: {greyscaleSettings.blueSlider.toFixed(3)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.001"
-                      value={greyscaleSettings.blueSlider}
-                      onChange={(e) =>
-                        updateGreyscaleSettings({ blueSlider: parseFloat(e.target.value) })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Background Intensity: {greyscaleSettings.bgIntensity.toFixed(2)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={greyscaleSettings.bgIntensity}
-                      onChange={(e) =>
-                        updateGreyscaleSettings({ bgIntensity: parseFloat(e.target.value) })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Black & White Method */}
-              {greyscaleSettings.method === 'blackwhite' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Threshold: {greyscaleSettings.threshold.toFixed(2)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={greyscaleSettings.threshold}
-                      onChange={(e) =>
-                        updateGreyscaleSettings({ threshold: parseFloat(e.target.value) })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Black Factor: {greyscaleSettings.blackFactor.toFixed(2)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={greyscaleSettings.blackFactor}
-                      onChange={(e) =>
-                        updateGreyscaleSettings({ blackFactor: parseFloat(e.target.value) })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      White Factor: {greyscaleSettings.whiteFactor.toFixed(2)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={greyscaleSettings.whiteFactor}
-                      onChange={(e) =>
-                        updateGreyscaleSettings({ whiteFactor: parseFloat(e.target.value) })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Background Intensity: {greyscaleSettings.bgIntensity.toFixed(2)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={greyscaleSettings.bgIntensity}
-                      onChange={(e) =>
-                        updateGreyscaleSettings({ bgIntensity: parseFloat(e.target.value) })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Image Editor */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Image Adjustments</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                Greyscaling
+              </h2>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Brightness: {imageSettings.brightness}
+                    Method
+                  </label>
+                  <select
+                    value={greyscaleSettings.method}
+                    onChange={(e) =>
+                      updateGreyscaleSettings({
+                        method: e.target.value as 'averaging' | 'luminance' | 'blackwhite',
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="averaging">Averaging</option>
+                    <option value="luminance">Luminance</option>
+                    <option value="blackwhite">Black & White</option>
+                  </select>
+                </div>
+
+                {/* Averaging Method */}
+                {greyscaleSettings.method === 'averaging' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Background Intensity: <span className="text-blue-600 font-semibold">{greyscaleSettings.bgIntensity.toFixed(2)}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={greyscaleSettings.bgIntensity}
+                      onChange={(e) =>
+                        updateGreyscaleSettings({ bgIntensity: parseFloat(e.target.value) })
+                      }
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Controls the grey-scale of the background
+                    </p>
+                  </div>
+                )}
+
+                {/* Luminance Method */}
+                {greyscaleSettings.method === 'luminance' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Red: <span className="text-blue-600 font-semibold">{greyscaleSettings.redSlider.toFixed(3)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.001"
+                        value={greyscaleSettings.redSlider}
+                        onChange={(e) =>
+                          updateGreyscaleSettings({ redSlider: parseFloat(e.target.value) })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Green: <span className="text-blue-600 font-semibold">{greyscaleSettings.greenSlider.toFixed(3)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.001"
+                        value={greyscaleSettings.greenSlider}
+                        onChange={(e) =>
+                          updateGreyscaleSettings({ greenSlider: parseFloat(e.target.value) })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Blue: <span className="text-blue-600 font-semibold">{greyscaleSettings.blueSlider.toFixed(3)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.001"
+                        value={greyscaleSettings.blueSlider}
+                        onChange={(e) =>
+                          updateGreyscaleSettings({ blueSlider: parseFloat(e.target.value) })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Background Intensity: <span className="text-blue-600 font-semibold">{greyscaleSettings.bgIntensity.toFixed(2)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={greyscaleSettings.bgIntensity}
+                        onChange={(e) =>
+                          updateGreyscaleSettings({ bgIntensity: parseFloat(e.target.value) })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Black & White Method */}
+                {greyscaleSettings.method === 'blackwhite' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Threshold: <span className="text-blue-600 font-semibold">{greyscaleSettings.threshold.toFixed(2)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={greyscaleSettings.threshold}
+                        onChange={(e) =>
+                          updateGreyscaleSettings({ threshold: parseFloat(e.target.value) })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Black Factor: <span className="text-blue-600 font-semibold">{greyscaleSettings.blackFactor.toFixed(2)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={greyscaleSettings.blackFactor}
+                        onChange={(e) =>
+                          updateGreyscaleSettings({ blackFactor: parseFloat(e.target.value) })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        White Factor: <span className="text-blue-600 font-semibold">{greyscaleSettings.whiteFactor.toFixed(2)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={greyscaleSettings.whiteFactor}
+                        onChange={(e) =>
+                          updateGreyscaleSettings({ whiteFactor: parseFloat(e.target.value) })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Background Intensity: <span className="text-blue-600 font-semibold">{greyscaleSettings.bgIntensity.toFixed(2)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={greyscaleSettings.bgIntensity}
+                        onChange={(e) =>
+                          updateGreyscaleSettings({ bgIntensity: parseFloat(e.target.value) })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Image Adjustments */}
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                Image Adjustments
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Brightness: <span className="text-blue-600 font-semibold">{imageSettings.brightness}</span>
                   </label>
                   <input
                     type="range"
@@ -335,7 +324,7 @@ export function EditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contrast: {imageSettings.contrast}
+                    Contrast: <span className="text-blue-600 font-semibold">{imageSettings.contrast}</span>
                   </label>
                   <input
                     type="range"
@@ -355,7 +344,7 @@ export function EditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Exposure: {imageSettings.exposure}
+                    Exposure: <span className="text-blue-600 font-semibold">{imageSettings.exposure}</span>
                   </label>
                   <input
                     type="range"
@@ -375,7 +364,7 @@ export function EditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Blur: {imageSettings.blur}
+                    Blur: <span className="text-blue-600 font-semibold">{imageSettings.blur}</span>
                   </label>
                   <input
                     type="range"
@@ -394,6 +383,25 @@ export function EditPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Right Preview - Fixed Image Preview (2/3 width) */}
+        <div className="flex-1 bg-gray-900 relative flex items-center justify-center p-8">
+          {isProcessing && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+              <div className="text-white text-xl">Processing...</div>
+            </div>
+          )}
+          <canvas
+            ref={canvasRef}
+            className="max-w-full max-h-full object-contain shadow-2xl"
+            style={{ imageRendering: 'auto' }}
+          />
+
+          {/* Info Overlay */}
+          <div className="absolute top-4 right-4 bg-black bg-opacity-60 text-white text-sm px-4 py-2 rounded-lg">
+            <p>📸 Greyscale Preview</p>
           </div>
         </div>
       </div>
