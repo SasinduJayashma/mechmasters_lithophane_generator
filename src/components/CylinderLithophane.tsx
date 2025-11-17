@@ -1,15 +1,18 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CylinderParams, ModelOptions } from '../store';
+import { CylinderParams, ModelOptions, PreviewQuality } from '../store';
+import { calculateSegments } from '../utils/qualityCalculations';
 
 interface Props {
   imageData: ImageData;
   params: CylinderParams;
   options: ModelOptions;
+  mmPerPixel: number;
+  previewQuality: PreviewQuality;
 }
 
-export function CylinderLithophane({ imageData, params, options }: Props) {
+export function CylinderLithophane({ imageData, params, options, mmPerPixel, previewQuality }: Props) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Rotate the mesh slowly
@@ -28,9 +31,12 @@ export function CylinderLithophane({ imageData, params, options }: Props) {
     const cylinderHeight = params.height;
     const angleRad = (params.angle * Math.PI) / 180;
 
-    // Resolution - balance between quality and performance
-    const segmentsW = Math.min(width, 300);
-    const segmentsH = Math.min(height, 300);
+    // Calculate segments based on quality settings
+    const { segmentsW, segmentsH } = calculateSegments(
+      params,
+      mmPerPixel,
+      previewQuality
+    );
 
     const geometry = new THREE.BufferGeometry();
     const vertices: number[] = [];
@@ -91,7 +97,7 @@ export function CylinderLithophane({ imageData, params, options }: Props) {
     geometry.computeVertexNormals();
 
     return geometry;
-  }, [imageData, params, options]);
+  }, [imageData, params, options, mmPerPixel, previewQuality]);
 
   // Create texture from image data
   const texture = useMemo(() => {

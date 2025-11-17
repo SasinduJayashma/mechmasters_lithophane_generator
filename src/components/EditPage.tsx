@@ -10,7 +10,6 @@ import {
 export function EditPage() {
   const {
     originalImage,
-    processedImageData,
     setProcessedImageData,
     greyscaleSettings,
     updateGreyscaleSettings,

@@ -3,7 +3,8 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useStore } from '../store';
 import { CylinderLithophane } from './CylinderLithophane';
 import { generateCylinderLithophane, downloadSTL } from '../utils/stlGenerator';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { estimateFileSize, getPreviewQualityLabel } from '../utils/qualityCalculations';
 
 export function ModelPage() {
   const {
@@ -12,10 +13,17 @@ export function ModelPage() {
     updateCylinderParams,
     modelOptions,
     updateModelOptions,
+    qualitySettings,
+    updateQualitySettings,
     setCurrentPage,
   } = useStore();
 
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Calculate estimated file size
+  const estimatedFileSizeMB = useMemo(() => {
+    return estimateFileSize(cylinderParams, qualitySettings.mmPerPixel);
+  }, [cylinderParams, qualitySettings.mmPerPixel]);
 
   if (!processedImageData) {
     setCurrentPage('upload');
@@ -30,7 +38,8 @@ export function ModelPage() {
       const stl = generateCylinderLithophane(
         processedImageData,
         cylinderParams,
-        modelOptions
+        modelOptions,
+        qualitySettings.mmPerPixel
       );
       downloadSTL(stl, 'lithophane.stl');
     } finally {
@@ -92,6 +101,8 @@ export function ModelPage() {
                   imageData={processedImageData}
                   params={cylinderParams}
                   options={modelOptions}
+                  mmPerPixel={qualitySettings.mmPerPixel}
+                  previewQuality={qualitySettings.previewQuality}
                 />
               </Canvas>
             </div>
@@ -102,6 +113,110 @@ export function ModelPage() {
 
           {/* Controls */}
           <div className="space-y-4">
+            {/* Quality Options */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">Quality Options</h2>
+
+              <div className="space-y-4">
+                {/* File Size Estimate */}
+                <div className="p-3 bg-gray-100 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700">Estimated file size:</p>
+                  <p className={`text-2xl font-bold ${estimatedFileSizeMB > 480 ? 'text-red-600' : 'text-green-600'}`}>
+                    {estimatedFileSizeMB.toFixed(0)} MB
+                  </p>
+                  {estimatedFileSizeMB > 480 && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Warning: File size exceeds 480 MB. Cura may not be able to slice this file.
+                    </p>
+                  )}
+                </div>
+
+                {/* mm per pixel */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    mm per pixel: {qualitySettings.mmPerPixel.toFixed(2)} mm
+                  </label>
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="1.0"
+                    step="0.05"
+                    value={qualitySettings.mmPerPixel}
+                    onChange={(e) =>
+                      updateQualitySettings({ mmPerPixel: parseFloat(e.target.value) })
+                    }
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Lower values = higher quality but larger file size
+                  </p>
+                </div>
+
+                {/* Preview Quality */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Preview Quality
+                  </label>
+                  <select
+                    value={qualitySettings.previewQuality}
+                    onChange={(e) =>
+                      updateQualitySettings({ previewQuality: e.target.value as any })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="lousy">{getPreviewQualityLabel('lousy')}</option>
+                    <option value="low">{getPreviewQualityLabel('low')}</option>
+                    <option value="medium">{getPreviewQualityLabel('medium')}</option>
+                    <option value="high">{getPreviewQualityLabel('high')}</option>
+                    <option value="native">{getPreviewQualityLabel('native')}</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Preview quality affects 3D viewer performance only
+                  </p>
+                </div>
+
+                {/* Cura Fix */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Cura Fix
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Prevents choppy curves in Cura 4.3+
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={qualitySettings.curaFix}
+                    onChange={(e) =>
+                      updateQualitySettings({ curaFix: e.target.checked })
+                    }
+                    className="w-5 h-5"
+                  />
+                </div>
+
+                {/* Auto Update */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Auto Update
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Automatically update preview on changes
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={qualitySettings.autoUpdate}
+                    onChange={(e) =>
+                      updateQualitySettings({ autoUpdate: e.target.checked })
+                    }
+                    className="w-5 h-5"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Cylinder Parameters */}
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-semibold mb-4">Cylinder Parameters</h2>
