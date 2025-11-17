@@ -1,5 +1,4 @@
 import { useRef, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CylinderParams, ModelOptions, PreviewQuality } from '../store';
 import { calculateSegments } from '../utils/qualityCalculations';
@@ -183,6 +182,253 @@ export function CylinderLithophane({ imageData, params, options, mmPerPixel, pre
     return geometry;
   }, [params, mmPerPixel, previewQuality]);
 
+  // Create side caps geometry (connecting inner and outer walls at the edges when angle < 360)
+  const sideCapsGeometry = useMemo(() => {
+    if (params.angle >= 360) return null;
+
+    const radiusBottom = params.diameterBottom / 2;
+    const radiusTop = params.diameterTop / 2;
+    const cylinderHeight = params.height;
+    const angleRad = (params.angle * Math.PI) / 180;
+
+    const { segmentsW, segmentsH } = calculateSegments(
+      params,
+      mmPerPixel,
+      previewQuality
+    );
+
+    // Build thickness grid (same as outer surface)
+    const thicknessGrid: number[][] = [];
+    for (let row = 0; row <= segmentsH; row++) {
+      thicknessGrid[row] = [];
+      const v = row / segmentsH;
+
+      for (let col = 0; col <= segmentsW; col++) {
+        const u = col / segmentsW;
+        const imgX = Math.floor(u * (imageData.width - 1));
+        const imgY = Math.floor(v * (imageData.height - 1));
+        const idx = (imgY * imageData.width + imgX) * 4;
+        let greyValue = imageData.data[idx] / 255;
+        if (!options.positiveImage) {
+          greyValue = 1 - greyValue;
+        }
+        const thickness = params.minThick + greyValue * (params.maxThick - params.minThick);
+        thicknessGrid[row][col] = thickness;
+      }
+    }
+
+    const smoothedGrid = smoothThicknessValues(thicknessGrid, smoothing);
+
+    const geometry = new THREE.BufferGeometry();
+    const vertices: number[] = [];
+    const indices: number[] = [];
+
+    // Start cap (at angle 0)
+    for (let row = 0; row <= segmentsH; row++) {
+      const v = row / segmentsH;
+      const y = cylinderHeight * v - cylinderHeight / 2;
+      const radius = radiusBottom + (radiusTop - radiusBottom) * v;
+
+      // Inner vertex
+      const innerX = radius * Math.cos(0);
+      const innerZ = radius * Math.sin(0);
+      vertices.push(innerX, y, innerZ);
+
+      // Outer vertex
+      const thickness = smoothedGrid[row][0];
+      const outerX = (radius + thickness) * Math.cos(0);
+      const outerZ = (radius + thickness) * Math.sin(0);
+      vertices.push(outerX, y, outerZ);
+    }
+
+    // Create faces for start cap
+    for (let row = 0; row < segmentsH; row++) {
+      const innerBottom = row * 2;
+      const outerBottom = row * 2 + 1;
+      const innerTop = (row + 1) * 2;
+      const outerTop = (row + 1) * 2 + 1;
+
+      indices.push(innerBottom, innerTop, outerTop);
+      indices.push(innerBottom, outerTop, outerBottom);
+    }
+
+    // End cap (at angle = params.angle)
+    const startCapVertexCount = (segmentsH + 1) * 2;
+    for (let row = 0; row <= segmentsH; row++) {
+      const v = row / segmentsH;
+      const y = cylinderHeight * v - cylinderHeight / 2;
+      const radius = radiusBottom + (radiusTop - radiusBottom) * v;
+
+      // Inner vertex
+      const innerX = radius * Math.cos(angleRad);
+      const innerZ = radius * Math.sin(angleRad);
+      vertices.push(innerX, y, innerZ);
+
+      // Outer vertex
+      const thickness = smoothedGrid[row][segmentsW];
+      const outerX = (radius + thickness) * Math.cos(angleRad);
+      const outerZ = (radius + thickness) * Math.sin(angleRad);
+      vertices.push(outerX, y, outerZ);
+    }
+
+    // Create faces for end cap (reversed winding)
+    for (let row = 0; row < segmentsH; row++) {
+      const innerBottom = startCapVertexCount + row * 2;
+      const outerBottom = startCapVertexCount + row * 2 + 1;
+      const innerTop = startCapVertexCount + (row + 1) * 2;
+      const outerTop = startCapVertexCount + (row + 1) * 2 + 1;
+
+      indices.push(innerBottom, outerBottom, outerTop);
+      indices.push(innerBottom, outerTop, innerTop);
+    }
+
+    geometry.setIndex(indices);
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.computeVertexNormals();
+
+    return geometry;
+  }, [params, imageData, options, mmPerPixel, previewQuality, smoothing]);
+
+  // Create bottom cover geometry (connecting inner and outer walls at the bottom)
+  const bottomCoverGeometry = useMemo(() => {
+    if (!params.hasBottomCover) return null;
+
+    const radiusBottom = params.diameterBottom / 2;
+    const cylinderHeight = params.height;
+    const angleRad = (params.angle * Math.PI) / 180;
+
+    const { segmentsW } = calculateSegments(
+      params,
+      mmPerPixel,
+      previewQuality
+    );
+
+    // Build thickness grid for bottom row
+    const thicknessRow: number[] = [];
+    for (let col = 0; col <= segmentsW; col++) {
+      const u = col / segmentsW;
+      const imgX = Math.floor(u * (imageData.width - 1));
+      const imgY = 0; // bottom row
+      const idx = (imgY * imageData.width + imgX) * 4;
+      let greyValue = imageData.data[idx] / 255;
+      if (!options.positiveImage) {
+        greyValue = 1 - greyValue;
+      }
+      const thickness = params.minThick + greyValue * (params.maxThick - params.minThick);
+      thicknessRow[col] = thickness;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    const vertices: number[] = [];
+    const indices: number[] = [];
+
+    const y = -cylinderHeight / 2;
+
+    // Create vertices for bottom ring
+    for (let col = 0; col <= segmentsW; col++) {
+      const u = col / segmentsW;
+      const angle = angleRad * u;
+
+      // Inner vertex
+      const innerX = radiusBottom * Math.cos(angle);
+      const innerZ = radiusBottom * Math.sin(angle);
+      vertices.push(innerX, y, innerZ);
+
+      // Outer vertex
+      const thickness = thicknessRow[col];
+      const outerX = (radiusBottom + thickness) * Math.cos(angle);
+      const outerZ = (radiusBottom + thickness) * Math.sin(angle);
+      vertices.push(outerX, y, outerZ);
+    }
+
+    // Create faces for bottom ring
+    for (let col = 0; col < segmentsW; col++) {
+      const innerLeft = col * 2;
+      const outerLeft = col * 2 + 1;
+      const innerRight = (col + 1) * 2;
+      const outerRight = (col + 1) * 2 + 1;
+
+      indices.push(innerLeft, outerLeft, outerRight);
+      indices.push(innerLeft, outerRight, innerRight);
+    }
+
+    geometry.setIndex(indices);
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.computeVertexNormals();
+
+    return geometry;
+  }, [params, imageData, options, mmPerPixel, previewQuality]);
+
+  // Create top cover geometry (connecting inner and outer walls at the top)
+  const topCoverGeometry = useMemo(() => {
+    if (!params.hasTopCover) return null;
+
+    const radiusTop = params.diameterTop / 2;
+    const cylinderHeight = params.height;
+    const angleRad = (params.angle * Math.PI) / 180;
+
+    const { segmentsW } = calculateSegments(
+      params,
+      mmPerPixel,
+      previewQuality
+    );
+
+    // Build thickness grid for top row
+    const thicknessRow: number[] = [];
+    for (let col = 0; col <= segmentsW; col++) {
+      const u = col / segmentsW;
+      const imgX = Math.floor(u * (imageData.width - 1));
+      const imgY = imageData.height - 1; // top row
+      const idx = (imgY * imageData.width + imgX) * 4;
+      let greyValue = imageData.data[idx] / 255;
+      if (!options.positiveImage) {
+        greyValue = 1 - greyValue;
+      }
+      const thickness = params.minThick + greyValue * (params.maxThick - params.minThick);
+      thicknessRow[col] = thickness;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    const vertices: number[] = [];
+    const indices: number[] = [];
+
+    const y = cylinderHeight / 2;
+
+    // Create vertices for top ring
+    for (let col = 0; col <= segmentsW; col++) {
+      const u = col / segmentsW;
+      const angle = angleRad * u;
+
+      // Inner vertex
+      const innerX = radiusTop * Math.cos(angle);
+      const innerZ = radiusTop * Math.sin(angle);
+      vertices.push(innerX, y, innerZ);
+
+      // Outer vertex
+      const thickness = thicknessRow[col];
+      const outerX = (radiusTop + thickness) * Math.cos(angle);
+      const outerZ = (radiusTop + thickness) * Math.sin(angle);
+      vertices.push(outerX, y, outerZ);
+    }
+
+    // Create faces for top ring (reversed winding for upward-facing normals)
+    for (let col = 0; col < segmentsW; col++) {
+      const innerLeft = col * 2;
+      const outerLeft = col * 2 + 1;
+      const innerRight = (col + 1) * 2;
+      const outerRight = (col + 1) * 2 + 1;
+
+      indices.push(innerLeft, innerRight, outerRight);
+      indices.push(innerLeft, outerRight, outerLeft);
+    }
+
+    geometry.setIndex(indices);
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.computeVertexNormals();
+
+    return geometry;
+  }, [params, imageData, options, mmPerPixel, previewQuality]);
+
   return (
     <>
       {/* Outer textured surface */}
@@ -205,6 +451,42 @@ export function CylinderLithophane({ imageData, params, options, mmPerPixel, pre
           metalness={0.1}
         />
       </mesh>
+
+      {/* Side caps (when angle < 360) */}
+      {sideCapsGeometry && (
+        <mesh geometry={sideCapsGeometry}>
+          <meshStandardMaterial
+            color={options.materialColor}
+            side={THREE.DoubleSide}
+            roughness={0.8}
+            metalness={0.1}
+          />
+        </mesh>
+      )}
+
+      {/* Bottom cover */}
+      {bottomCoverGeometry && (
+        <mesh geometry={bottomCoverGeometry}>
+          <meshStandardMaterial
+            color={options.materialColor}
+            side={THREE.DoubleSide}
+            roughness={0.8}
+            metalness={0.1}
+          />
+        </mesh>
+      )}
+
+      {/* Top cover */}
+      {topCoverGeometry && (
+        <mesh geometry={topCoverGeometry}>
+          <meshStandardMaterial
+            color={options.materialColor}
+            side={THREE.DoubleSide}
+            roughness={0.8}
+            metalness={0.1}
+          />
+        </mesh>
+      )}
     </>
   );
 }
