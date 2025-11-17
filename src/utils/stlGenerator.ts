@@ -90,10 +90,13 @@ export function generateCylinderLithophane(
   // Step 2: Apply smoothing to reduce spikes
   const smoothedGrid = smoothThicknessValues(thicknessGrid, smoothing);
 
-  // Step 3: Create vertex grid using smoothed thickness values
-  const vertices: Vector3[][] = [];
+  // Step 3: Create TWO vertex grids - one for inner wall (flat) and one for outer wall (patterned)
+  const innerVertices: Vector3[][] = [];
+  const outerVertices: Vector3[][] = [];
+
   for (let row = 0; row <= segmentsH; row++) {
-    vertices[row] = [];
+    innerVertices[row] = [];
+    outerVertices[row] = [];
     const v = row / segmentsH;
     const y = cylinderHeight * v - cylinderHeight / 2;
     const radius = radiusBottom + (radiusTop - radiusBottom) * v;
@@ -102,24 +105,26 @@ export function generateCylinderLithophane(
       const u = col / segmentsW;
       const angle = angleRad * u;
 
-      // Use smoothed thickness value
+      // Inner wall: flat surface at constant radius (no thickness variation)
+      const innerX = radius * Math.cos(angle);
+      const innerZ = radius * Math.sin(angle);
+      innerVertices[row][col] = { x: innerX, y, z: innerZ };
+
+      // Outer wall: radius + thickness (lithophane pattern)
       const thickness = smoothedGrid[row][col];
-
-      // Calculate position
-      const x = (radius + thickness) * Math.cos(angle);
-      const z = (radius + thickness) * Math.sin(angle);
-
-      vertices[row][col] = { x, y, z };
+      const outerX = (radius + thickness) * Math.cos(angle);
+      const outerZ = (radius + thickness) * Math.sin(angle);
+      outerVertices[row][col] = { x: outerX, y, z: outerZ };
     }
   }
 
-  // Create triangles from grid
+  // Create outer wall triangles (with lithophane pattern)
   for (let row = 0; row < segmentsH; row++) {
     for (let col = 0; col < segmentsW; col++) {
-      const v1 = vertices[row][col];
-      const v2 = vertices[row][col + 1];
-      const v3 = vertices[row + 1][col + 1];
-      const v4 = vertices[row + 1][col];
+      const v1 = outerVertices[row][col];
+      const v2 = outerVertices[row][col + 1];
+      const v3 = outerVertices[row + 1][col + 1];
+      const v4 = outerVertices[row + 1][col];
 
       // Triangle 1
       triangles.push({
@@ -135,68 +140,106 @@ export function generateCylinderLithophane(
     }
   }
 
-  // Add caps if angle is less than 360
-  if (params.angle < 360) {
-    // Start cap
-    for (let row = 0; row < segmentsH; row++) {
-      const v1 = { x: 0, y: vertices[row][0].y, z: 0 };
-      const v2 = vertices[row][0];
-      const v3 = vertices[row + 1][0];
-      const v4 = { x: 0, y: vertices[row + 1][0].y, z: 0 };
+  // Create inner wall triangles (flat surface - note reversed winding for inward-facing normals)
+  for (let row = 0; row < segmentsH; row++) {
+    for (let col = 0; col < segmentsW; col++) {
+      const v1 = innerVertices[row][col];
+      const v2 = innerVertices[row][col + 1];
+      const v3 = innerVertices[row + 1][col + 1];
+      const v4 = innerVertices[row + 1][col];
 
+      // Triangle 1 (reversed winding)
       triangles.push({
         vertices: [v1, v3, v2],
         normal: calculateNormal(v1, v3, v2),
       });
+
+      // Triangle 2 (reversed winding)
       triangles.push({
         vertices: [v1, v4, v3],
         normal: calculateNormal(v1, v4, v3),
       });
     }
+  }
 
-    // End cap
+  // Add side caps if angle is less than 360 (connect inner and outer walls at edges)
+  if (params.angle < 360) {
+    // Start cap (at angle 0)
     for (let row = 0; row < segmentsH; row++) {
-      const v1 = { x: 0, y: vertices[row][segmentsW].y, z: 0 };
-      const v2 = vertices[row][segmentsW];
-      const v3 = vertices[row + 1][segmentsW];
-      const v4 = { x: 0, y: vertices[row + 1][segmentsW].y, z: 0 };
+      const innerBottom = innerVertices[row][0];
+      const innerTop = innerVertices[row + 1][0];
+      const outerBottom = outerVertices[row][0];
+      const outerTop = outerVertices[row + 1][0];
 
+      // Two triangles forming the rectangular cap
       triangles.push({
-        vertices: [v1, v2, v3],
-        normal: calculateNormal(v1, v2, v3),
+        vertices: [innerBottom, innerTop, outerTop],
+        normal: calculateNormal(innerBottom, innerTop, outerTop),
       });
       triangles.push({
-        vertices: [v1, v3, v4],
-        normal: calculateNormal(v1, v3, v4),
+        vertices: [innerBottom, outerTop, outerBottom],
+        normal: calculateNormal(innerBottom, outerTop, outerBottom),
+      });
+    }
+
+    // End cap (at angle = params.angle)
+    for (let row = 0; row < segmentsH; row++) {
+      const innerBottom = innerVertices[row][segmentsW];
+      const innerTop = innerVertices[row + 1][segmentsW];
+      const outerBottom = outerVertices[row][segmentsW];
+      const outerTop = outerVertices[row + 1][segmentsW];
+
+      // Two triangles forming the rectangular cap (reversed winding)
+      triangles.push({
+        vertices: [innerBottom, outerBottom, outerTop],
+        normal: calculateNormal(innerBottom, outerBottom, outerTop),
+      });
+      triangles.push({
+        vertices: [innerBottom, outerTop, innerTop],
+        normal: calculateNormal(innerBottom, outerTop, innerTop),
       });
     }
   }
 
-  // Add top and bottom caps
-  // Bottom cap
-  const centerBottom = { x: 0, y: -cylinderHeight / 2, z: 0 };
-  for (let col = 0; col < segmentsW; col++) {
-    const v1 = centerBottom;
-    const v2 = vertices[0][col];
-    const v3 = vertices[0][col + 1];
+  // Add top and bottom rings (connect inner and outer walls at top and bottom edges)
+  // Bottom ring
+  if (params.hasBottomCover) {
+    for (let col = 0; col < segmentsW; col++) {
+      const innerLeft = innerVertices[0][col];
+      const innerRight = innerVertices[0][col + 1];
+      const outerLeft = outerVertices[0][col];
+      const outerRight = outerVertices[0][col + 1];
 
-    triangles.push({
-      vertices: [v1, v3, v2],
-      normal: { x: 0, y: -1, z: 0 },
-    });
+      // Two triangles forming the ring segment
+      triangles.push({
+        vertices: [innerLeft, outerLeft, outerRight],
+        normal: calculateNormal(innerLeft, outerLeft, outerRight),
+      });
+      triangles.push({
+        vertices: [innerLeft, outerRight, innerRight],
+        normal: calculateNormal(innerLeft, outerRight, innerRight),
+      });
+    }
   }
 
-  // Top cap
-  const centerTop = { x: 0, y: cylinderHeight / 2, z: 0 };
-  for (let col = 0; col < segmentsW; col++) {
-    const v1 = centerTop;
-    const v2 = vertices[segmentsH][col];
-    const v3 = vertices[segmentsH][col + 1];
+  // Top ring
+  if (params.hasTopCover) {
+    for (let col = 0; col < segmentsW; col++) {
+      const innerLeft = innerVertices[segmentsH][col];
+      const innerRight = innerVertices[segmentsH][col + 1];
+      const outerLeft = outerVertices[segmentsH][col];
+      const outerRight = outerVertices[segmentsH][col + 1];
 
-    triangles.push({
-      vertices: [v1, v2, v3],
-      normal: { x: 0, y: 1, z: 0 },
-    });
+      // Two triangles forming the ring segment (reversed winding for upward-facing normals)
+      triangles.push({
+        vertices: [innerLeft, innerRight, outerRight],
+        normal: calculateNormal(innerLeft, innerRight, outerRight),
+      });
+      triangles.push({
+        vertices: [innerLeft, outerRight, outerLeft],
+        normal: calculateNormal(innerLeft, outerRight, outerLeft),
+      });
+    }
   }
 
   // Generate Binary STL
