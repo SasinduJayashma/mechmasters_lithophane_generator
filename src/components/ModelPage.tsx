@@ -16,6 +16,7 @@ export function ModelPage() {
     qualitySettings,
     updateQualitySettings,
     setCurrentPage,
+    reset,
   } = useStore();
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -63,6 +64,12 @@ export function ModelPage() {
             className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
           >
             ← Back to Edit
+          </button>
+          <button
+            onClick={reset}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+          >
+            Reset to Defaults
           </button>
           <button
             onClick={handleGenerateSTL}

@@ -16,6 +16,7 @@ export function EditPage() {
     imageSettings,
     updateImageSettings,
     setCurrentPage,
+    reset,
   } = useStore();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -83,6 +84,12 @@ export function EditPage() {
             className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
           >
             ← Back to Upload
+          </button>
+          <button
+            onClick={reset}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+          >
+            Reset to Defaults
           </button>
           <button
             onClick={handleNext}
