@@ -44,7 +44,7 @@ export function generateCylinderLithophane(
   options: ModelOptions,
   mmPerPixel: number = 0.1,
   smoothing: number = 1
-): string {
+): ArrayBuffer {
   const { width, height, data } = imageData;
   const triangles: Triangle[] = [];
 
@@ -199,30 +199,64 @@ export function generateCylinderLithophane(
     });
   }
 
-  // Generate STL
-  return generateSTL(triangles);
+  // Generate Binary STL
+  return generateBinarySTL(triangles);
 }
 
-function generateSTL(triangles: Triangle[]): string {
-  let stl = 'solid lithophane\n';
+/**
+ * Generate Binary STL format (much more compact than ASCII)
+ * Binary STL is standard format supported by all slicers
+ * Format: 80-byte header + 4-byte triangle count + 50 bytes per triangle
+ */
+function generateBinarySTL(triangles: Triangle[]): ArrayBuffer {
+  const triangleCount = triangles.length;
 
-  for (const triangle of triangles) {
-    const { normal, vertices } = triangle;
-    stl += `  facet normal ${normal.x} ${normal.y} ${normal.z}\n`;
-    stl += '    outer loop\n';
-    for (const vertex of vertices) {
-      stl += `      vertex ${vertex.x} ${vertex.y} ${vertex.z}\n`;
-    }
-    stl += '    endloop\n';
-    stl += '  endfacet\n';
+  // Calculate buffer size
+  // Header: 80 bytes
+  // Triangle count: 4 bytes
+  // Each triangle: 50 bytes (12 for normal + 36 for vertices + 2 for attribute)
+  const bufferSize = 80 + 4 + (triangleCount * 50);
+  const buffer = new ArrayBuffer(bufferSize);
+  const view = new DataView(buffer);
+
+  let offset = 0;
+
+  // Write 80-byte header (ASCII "Lithophane Generator")
+  const header = 'Lithophane Generator - Binary STL';
+  for (let i = 0; i < 80; i++) {
+    view.setUint8(offset++, i < header.length ? header.charCodeAt(i) : 0);
   }
 
-  stl += 'endsolid lithophane\n';
-  return stl;
+  // Write triangle count (little-endian uint32)
+  view.setUint32(offset, triangleCount, true);
+  offset += 4;
+
+  // Write each triangle
+  for (const triangle of triangles) {
+    const { normal, vertices } = triangle;
+
+    // Normal vector (3 × float32)
+    view.setFloat32(offset, normal.x, true); offset += 4;
+    view.setFloat32(offset, normal.y, true); offset += 4;
+    view.setFloat32(offset, normal.z, true); offset += 4;
+
+    // Three vertices (9 × float32)
+    for (const vertex of vertices) {
+      view.setFloat32(offset, vertex.x, true); offset += 4;
+      view.setFloat32(offset, vertex.y, true); offset += 4;
+      view.setFloat32(offset, vertex.z, true); offset += 4;
+    }
+
+    // Attribute byte count (uint16) - typically 0
+    view.setUint16(offset, 0, true);
+    offset += 2;
+  }
+
+  return buffer;
 }
 
-export function downloadSTL(stl: string, filename: string = 'lithophane.stl') {
-  const blob = new Blob([stl], { type: 'text/plain' });
+export function downloadSTL(stl: ArrayBuffer, filename: string = 'lithophane.stl') {
+  const blob = new Blob([stl], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
